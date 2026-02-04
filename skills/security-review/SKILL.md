@@ -482,13 +482,237 @@ Before ANY production deployment:
 - [ ] **File Uploads**: Validated (size, type)
 - [ ] **Wallet Signatures**: Verified (if blockchain)
 
+## Security Best Practices (from OpenAI Skills)
+
+### Secure Coding Principles
+
+#### 1. Defense in Depth
+Apply multiple layers of security:
+- Input validation at API boundary
+- Database-level constraints (RLS)
+- Output encoding
+- Content Security Policy
+
+#### 2. Least Privilege
+- Grant minimum permissions required
+- Use service accounts with limited scope
+- Separate read/write credentials
+- Rotate credentials regularly
+
+#### 3. Fail Securely
+```typescript
+// ❌ WRONG: Error exposes internal state
+catch (error) {
+  return { error: error.stack }
+}
+
+// ✅ CORRECT: Generic error, log details internally
+catch (error) {
+  logger.error('Operation failed', { error, userId })
+  return { error: 'Operation failed' }
+}
+```
+
+#### 4. Never Trust Input
+- Validate all external data
+- Sanitize user-generated content
+- Verify webhook signatures
+- Check file types, not just extensions
+
+### Security Checklist by Layer
+
+#### Application Layer
+- [ ] All API endpoints authenticated (unless public)
+- [ ] Input validation on every parameter
+- [ ] Rate limiting per user/IP
+- [ ] CORS properly configured
+- [ ] Security headers set (CSP, HSTS, X-Frame-Options)
+
+#### Data Layer
+- [ ] Database connections use TLS
+- [ ] Sensitive data encrypted at rest
+- [ ] Backups encrypted
+- [ ] No PII in logs
+- [ ] Query parameterization enforced
+
+#### Infrastructure Layer
+- [ ] HTTPS only (HSTS enabled)
+- [ ] Secrets in environment variables
+- [ ] Container images scanned for vulnerabilities
+- [ ] Network policies restrict traffic
+- [ ] DDoS protection enabled
+
+## Threat Modeling (STRIDE)
+
+Use STRIDE framework to identify threats:
+
+### S - Spoofing Identity
+**Threat:** Attacker impersonates legitimate user
+**Mitigation:**
+- Strong authentication (MFA)
+- Session management
+- JWT token validation
+
+### T - Tampering
+**Threat:** Attacker modifies data in transit or at rest
+**Mitigation:**
+- HTTPS/TLS for all communications
+- Request signing for webhooks
+- Database integrity constraints
+
+### R - Repudiation
+**Threat:** Attacker denies performing an action
+**Mitigation:**
+- Audit logging
+- Digital signatures
+- Immutable logs
+
+### I - Information Disclosure
+**Threat:** Sensitive data exposed to unauthorized parties
+**Mitigation:**
+- Encryption at rest and in transit
+- Access controls
+- Error message sanitization
+
+### D - Denial of Service
+**Threat:** Attacker makes system unavailable
+**Mitigation:**
+- Rate limiting
+- Resource quotas
+- DDoS protection
+- Circuit breakers
+
+### E - Elevation of Privilege
+**Threat:** Attacker gains unauthorized permissions
+**Mitigation:**
+- Authorization checks on every request
+- Role-based access control (RBAC)
+- Principle of least privilege
+- Regular permission audits
+
+### Threat Modeling Workflow
+```
+1. Identify assets (data, systems, capabilities)
+2. Create data flow diagram
+3. Apply STRIDE to each component
+4. Rate threats (Critical/High/Medium/Low)
+5. Design mitigations
+6. Verify mitigations implemented
+```
+
+### Example Threat Model: API Endpoint
+
+```markdown
+## Threat Model: POST /api/transactions
+
+### Assets
+- User financial data
+- Transaction records
+- Wallet private keys
+
+### Threats
+
+#### [CRITICAL] Spoofing - Unauthorized transaction
+- **Attack:** Attacker uses stolen session token
+- **Mitigation:** Validate wallet signature for every transaction
+
+#### [HIGH] Tampering - Modify transaction amount
+- **Attack:** MITM modifies request payload
+- **Mitigation:** HTTPS + request signing
+
+#### [HIGH] Elevation - Access other user's transactions
+- **Attack:** Change user_id parameter
+- **Mitigation:** Verify authorization server-side
+
+#### [MEDIUM] DoS - Flood with invalid transactions
+- **Attack:** Bot submits thousands of requests
+- **Mitigation:** Rate limiting + CAPTCHA
+```
+
+## Security Tooling
+
+### Automated Security Scanning
+```bash
+# Dependency vulnerability scan
+npm audit
+npm audit --audit-level=high
+
+# Static analysis
+npx eslint . --plugin security
+npx semgrep --config=auto
+
+# Secret detection
+npx trufflehog filesystem . --json
+npx git-secrets --scan
+
+# Container scanning (if using Docker)
+docker scan myapp:latest
+```
+
+### CI/CD Security Pipeline
+```yaml
+# Example GitHub Actions workflow
+security-checks:
+  steps:
+    - name: Dependency Audit
+      run: npm audit --audit-level=moderate
+
+    - name: Secret Detection
+      run: npx trufflehog filesystem . --fail
+
+    - name: Static Analysis
+      run: npx eslint . --plugin security
+
+    - name: Security Tests
+      run: npm run test:security
+```
+
+## Incident Response
+
+### Security Incident Playbook
+
+1. **Detect**
+   - Automated alerts trigger
+   - User reports suspicious activity
+   - Anomaly in logs detected
+
+2. **Assess**
+   - Determine scope of compromise
+   - Identify affected systems/data
+   - Rate severity (Critical/High/Medium/Low)
+
+3. **Contain**
+   - Isolate affected systems
+   - Revoke compromised credentials
+   - Block malicious IPs
+
+4. **Eradicate**
+   - Remove attacker access
+   - Patch vulnerabilities
+   - Fix root cause
+
+5. **Recover**
+   - Restore from clean backups
+   - Verify system integrity
+   - Gradual service restoration
+
+6. **Learn**
+   - Document incident
+   - Update security measures
+   - Share lessons learned
+
 ## Resources
 
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+- [OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/)
+- [STRIDE Threat Model](https://docs.microsoft.com/en-us/azure/security/develop/threat-modeling-tool-threats)
 - [Next.js Security](https://nextjs.org/docs/security)
 - [Supabase Security](https://supabase.com/docs/guides/auth)
 - [Web Security Academy](https://portswigger.net/web-security)
+- [CWE Top 25](https://cwe.mitre.org/top25/)
 
 ---
 
 **Remember**: Security is not optional. One vulnerability can compromise the entire platform. When in doubt, err on the side of caution.
+
+**Security First**: Always apply defense in depth, validate every input, and never trust external data.

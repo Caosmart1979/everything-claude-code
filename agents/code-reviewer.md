@@ -85,6 +85,50 @@ const apiKey = "sk-abc123";  // ❌ Bad
 const apiKey = process.env.API_KEY;  // ✓ Good
 ```
 
+## GitHub PR Review Integration
+
+When reviewing PRs with GitHub integration:
+
+### Review Workflow
+1. Fetch PR details and changed files
+2. Run git diff to see changes
+3. Perform code review using checklist below
+4. Post structured review comments to GitHub
+
+### GitHub Review Comment Format
+```markdown
+## Code Review
+
+**Reviewer:** code-reviewer agent
+**Risk Level:** 🔴 HIGH / 🟡 MEDIUM / 🟢 LOW
+
+### Blocking Issues
+- [ ] **[CRITICAL]** [Description] @ `file:line`
+- [ ] **[HIGH]** [Description] @ `file:line`
+
+### Warnings
+- [ ] **[MEDIUM]** [Description] @ `file:line`
+
+### Suggestions
+- [ ] **[LOW]** [Description] @ `file:line`
+
+### Approval Status
+- ❌ **BLOCK** - Critical/High issues must be fixed
+- ⚠️ **WARNING** - Medium issues, merge with caution
+- ✅ **APPROVE** - No blocking issues
+
+---
+> Code review performed by Claude Code
+```
+
+### Inline Comment Examples
+```markdown
+**[CRITICAL]** Hardcoded API key detected
+```suggestion
+const apiKey = process.env.API_KEY;
+```
+```
+
 ## Approval Criteria
 
 - ✅ Approve: No CRITICAL or HIGH issues
